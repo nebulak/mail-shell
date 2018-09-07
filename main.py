@@ -48,9 +48,7 @@ class MailClient:
         self.is_connected = True
 
     def reconnect(self):
-        print("RECONNECT")
         self.deconnect()
-        self.tor.pre_connect()
         self.connection = imaplib.IMAP4_SSL(self.hostname)
         try:
             self.connection.login(self.username, self.password)
@@ -60,19 +58,13 @@ class MailClient:
 
         if(self.path != ""):
             # Remove leading slash e.g. /INBOX -> INBOX
-            print("PATH: " + self.path)
             if self.path[0] == '/':
                 self.path = self.path[1:]
-            paths = self.path.split("/")
-            print(paths)
-            for i in range(1, len(paths)):
-                #rc, data = self.connection.select(self.path)
-                print(paths[i])
-                rc, data = self.connection.select(paths[i])
-                if rc == "NO":
-                    print("path does not exist!")
-                    print(self.path)
-                    return
+            rc, data = self.connection.select(self.path)
+            if rc == "NO":
+                print("path does not exist!")
+                print(self.path)
+                return
 
     def deconnect(self):
         self.connection.logout()
@@ -89,6 +81,8 @@ class MailClient:
 
         # get mail directories if path_depth == 1
         if Path.get_depth(self.path) == 1:
+            # //TODO: delete
+            # if len(self.path.split('/')) == 2:
             rc, data = self.connection.list()
 
             for line in data:
@@ -200,7 +194,7 @@ class MailClient:
                 for header in ["subject", "from", "to", "date"]:
                     text = email.header.make_header(email.header.decode_header(msg[header]))
 
-                    #print('{:^8}: {}'.format(header.upper(), text))
+                    print('{:^8}: {}'.format(header.upper(), text))
                 print('\n')
                 self.parse_part(msg)
 
@@ -239,16 +233,18 @@ class MailClient:
                 print('\n' + ctype + '\n')
                 if ctype == 'text/plain':
                     try:
-                        print(part.get_payload(decode=True).decode('utf-8'))
+                        #print(part.get_payload(decode=True).decode('utf-8'))
+                        print(part.get_payload(decode=True))
                     except:
                         dec_msg = msg.get_payload(decode=True)
                         if dec_msg is None:
-                            #print(msg)
-                            return
-                        #print(dec_msg)
+                            print(msg)
+                        else:
+                            print(dec_msg)
                 if ctype == 'text/html':
                     try:
-                        soup = BeautifulSoup(part.get_payload(decode=True).decode('utf-8'), 'html.parser')
+                        #soup = BeautifulSoup(part.get_payload(decode=True).decode('utf-8'), 'html.parser')
+                        soup = BeautifulSoup(part.get_payload(decode=True), 'html.parser')
                         for script in soup(["script", "style"]):
                             script.extract()
                         # get text
@@ -264,20 +260,22 @@ class MailClient:
                         print(text)
                     except:
                         soup = BeautifulSoup(part.get_payload(decode=True), 'html.parser')
+                        #soup = BeautifulSoup(part.get_payload(decode=True).decode('utf-8'), 'html.parser')
                         print(soup.get_text())
                         if soup is None:
-                            #print(msg)
-                            return
-                        #print(dec_msg)
+                            print(msg)
+                        else:
+                            print(dec_msg)
+        # this works :)
         else:
             try:
-                print(part.get_payload(decode=True).decode('utf-8'))
+                print(part.get_payload(decode=True))
             except:
-                dec_msg = msg.get_payload(decode=True)
+                dec_msg = msg.get_payload()
                 if dec_msg is None:
-                    #print(msg)
-                    return
-                #print(dec_msg)
+                    print(msg)
+                else:
+                    print(dec_msg)
 
 
     def _parse_list_response(self, line):
