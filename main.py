@@ -9,11 +9,17 @@ from bs4 import BeautifulSoup
 from tor import TorPlugin
 from prompt_toolkit.history import InMemoryHistory
 from prompt_toolkit import prompt
-from prompt_toolkit.contrib.completers import WordCompleter
+from prompt_toolkit.completion import WordCompleter
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
-from prompt_toolkit.styles import style_from_dict
-from prompt_toolkit.token import Token
+from prompt_toolkit.styles import Style
+import socks
+import socket
 
+# Resolve address over tor
+def getaddrinfo(*args):
+    return [(socket.AF_INET, socket.SOCK_STREAM, 6, '', (args[0], args[1]))]
+
+socket.getaddrinfo = getaddrinfo
 
 class MailClient:
     """
@@ -324,9 +330,9 @@ class MailClient:
         do_run = True
 
 
-        toolbar_style = style_from_dict({
-            Token.Toolbar: '#0000ff bg:#ffffff',
-        })
+        #toolbar_style = style_from_pygments_dict({
+        #    Token.Toolbar: '#0000ff bg:#ffffff',
+        #})
         history = InMemoryHistory()
         cmd_completer = WordCompleter(['cd', 'ls', 'rm', 'vw', 'mv', 'ex', 'INBOX'])
         while do_run:
@@ -335,8 +341,8 @@ class MailClient:
                                     history=history,
                                     auto_suggest=AutoSuggestFromHistory(),
                                     completer=cmd_completer,
-                                    get_bottom_toolbar_tokens=self.get_bottom_toolbar_tokens,
-                                    style=toolbar_style,
+                                    #get_bottom_toolbar_tokens=self.get_bottom_toolbar_tokens,
+                                    #style=toolbar_style,
                                     refresh_interval=0.2
                                     )
 
